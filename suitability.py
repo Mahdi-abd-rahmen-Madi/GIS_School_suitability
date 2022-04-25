@@ -12,21 +12,29 @@ from arcpy import env
 
 # initializing the workspace
 arcpy.env.workspace="C:\Users\Mahdi\Desktop\Rasters"
+
 # reset any python environement overrides to remove specific python settings
 arcpy.ResetEnvironments()
-# to preview the current Coordinate system used 
+
+# Check out the ArcGIS Spatial Analyst extension license
+arcpy.CheckOutExtension("Spatial")
+
+# Preview the current Coordinate system used (for our case all vector and raster layers are under the same coordinate system   PCS = NAD_1983_StatePlane_Vermont_FIPS_4400 and projection = Transverse_Mercator
 Coord_sys = env.outputCoordinateSystem.name
-# Store elevation in raster variable 
+
+# Store elevation and land use in a raster variable 
 elevation = Raster('elevation1')
 land_Use = Raster('land_use1')
+
 # Convert the land_use1 cellsize to conform with the elevation1 30m cellsize 
 arcpy.Managment.Resample('land_use1','land_use2',30,"MAJORITY")
 land = Raster('land_use2')
-#c convert vector layers to rasters 
+
+# Convert vector layers (Rec_sites = points ; Schools = points ; Roads = polyline )  to rasters 
 arcpy.conversion.PolygoneToRaster('Rec_sites',"SOIL_CODE","MAXIMUM_COMBINED_AREA","#",env.cellsize)
 arcpy.conversion.PolygoneToRaster('Schools',"SOIL_CODE","MAXIMUM_COMBINED_AREA","#",env.cellsize)
 arcpy.conversion.PolygoneToRaster('Roads',"LENGTH","MAXIMUM_COMBINED_AREA","#",env.cellsize)
-# save these conversions to actual rasters to use later 
+# Save these conversions to actual rasters to use later 
 Roads = arcpy.Raster('Roads')
 Rec_sites = arcpy.Raster('Rec_sites')
 schools = arcpy.Raster('schools')
