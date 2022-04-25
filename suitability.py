@@ -47,10 +47,12 @@ reclassified_Land.save("Land_Suitability")
 # save the land suitability into a variable for later use 
 Land_S = arcpy.Raster('Land_Suitability')
 
-# roads distance (optional as stated in exercise text)
+# Create a distance map using the euclidian distance tool : 
+# syntax : EucDistance (in_source_data, {maximum_distance}, {cell_size}, {out_direction_raster})
+# source : https://desktop.arcgis.com/en/arcmap/10.3/tools/spatial-analyst-toolbox/euclidean-distance.htm
+
 Roads = "C:\Users\Mahdi\Desktop\Rasters\Roads.shp"
 Roads_output = "C:\Users\Mahdi\Desktop\Rasters\Roads.tiff"
-# INPUT /MAX DISTANCE / CELLSIZE / OUTPUT / DISTANCE METHOD / IN BARRIER DATA / OUTBACK DIRECTION RASTER 
 # https://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/euclidean-distance.htm
 EDRoads = arcpy.sa.EucDistance(Roads, 3100, 30, Roads_output) # as in 3.1 km 
 EDRoads.save(Roads_output)
