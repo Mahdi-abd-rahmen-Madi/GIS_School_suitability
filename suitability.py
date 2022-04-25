@@ -6,9 +6,10 @@
 import arcpy
 import arcpy.da
 from arcpy.sa import *
-from arcpy.management import * # to import project raster (not needed here)
 from arcpy.conversion import * # needed when converting polygone to raster
 from arcpy import env
+# from arcpy.management import * : to import project raster (only needed when projecting raster data from a coordinate system to another)
+
 # initializing the workspace
 arcpy.env.workspace="C:\Users\Mahdi\Desktop\Rasters"
 # reset any python environement overrides to remove specific python settings
