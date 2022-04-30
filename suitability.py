@@ -6,7 +6,7 @@
 import arcpy
 import arcpy.da
 from arcpy.sa import *
-from arcpy.conversion import * # needed when converting polygone to raster
+from arcpy.conversion import * # necessary when converting features layer (point, polyline or polygone) to a raster layer
 from arcpy import env
 # from arcpy.management import * : to import project raster (only needed when projecting raster data from a coordinate system to another)
 
@@ -33,7 +33,7 @@ land = Raster('land_use2')
 # Convert vector layers (Rec_sites = points ; Schools = points ; Roads = polyline )  to rasters 
 # PolylineToRaster Documentation : https://pro.arcgis.com/en/pro-app/latest/tool-reference/conversion/polyline-to-raster.htm
 # PointToRaster Documentation : https://desktop.arcgis.com/en/arcmap/latest/tools/conversion-toolbox/point-to-raster.htm
-arcpy.conversion.PointToRaster('Rec_sites',"SOIL_CODE","MAXIMUM_COMBINED_AREA","#",env.cellsize)
+arcpy.conversion.PointToRaster('Rec_sites',"MAP","MAXIMUM_COMBINED_AREA","#",env.cellsize)
 arcpy.conversion.PointToRaster('Schools',"FID","MAXIMUM_COMBINED_AREA","#",env.cellsize)
 arcpy.conversion.PolylineToRaster('Roads',"LENGTH","MAXIMUM_COMBINED_AREA","#",env.cellsize)
 
