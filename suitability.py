@@ -34,7 +34,7 @@ land = Raster('land_use2')
 # PolylineToRaster Documentation : https://pro.arcgis.com/en/pro-app/latest/tool-reference/conversion/polyline-to-raster.htm
 # PointToRaster Documentation : https://desktop.arcgis.com/en/arcmap/latest/tools/conversion-toolbox/point-to-raster.htm
 arcpy.conversion.PointToRaster('Rec_sites',"SOIL_CODE","MAXIMUM_COMBINED_AREA","#",env.cellsize)
-arcpy.conversion.PointToRaster('Schools',"SOIL_CODE","MAXIMUM_COMBINED_AREA","#",env.cellsize)
+arcpy.conversion.PointToRaster('Schools',"FID","MAXIMUM_COMBINED_AREA","#",env.cellsize)
 arcpy.conversion.PolylineToRaster('Roads',"LENGTH","MAXIMUM_COMBINED_AREA","#",env.cellsize)
 
 # Save these conversions to actual rasters for later use 
