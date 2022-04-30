@@ -1,6 +1,6 @@
-# city rec sites schools roads are all vector files 
-# land_use1  : cellsize = 25*25 
-# elevation1 : cellsize = 30*30 
+# parameters to look out for :
+# city, recreational sites, schools and  roads are all vector files 
+# land_use1 cellsize = 25*25 & elevation1 cellsize = 30*30 in which we have to convert land_use1 cellsize to 30*30 
 
 # imports
 import arcpy
@@ -31,21 +31,26 @@ arcpy.Managment.Resample('land_use1','land_use2',30,"MAJORITY")
 land = Raster('land_use2')
 
 # Convert vector layers (Rec_sites = points ; Schools = points ; Roads = polyline )  to rasters 
-arcpy.conversion.PolygoneToRaster('Rec_sites',"SOIL_CODE","MAXIMUM_COMBINED_AREA","#",env.cellsize)
-arcpy.conversion.PolygoneToRaster('Schools',"SOIL_CODE","MAXIMUM_COMBINED_AREA","#",env.cellsize)
-arcpy.conversion.PolygoneToRaster('Roads',"LENGTH","MAXIMUM_COMBINED_AREA","#",env.cellsize)
-# Save these conversions to actual rasters to use later 
+# PolylineToRaster Documentation : https://pro.arcgis.com/en/pro-app/latest/tool-reference/conversion/polyline-to-raster.htm
+# PointToRaster Documentation : https://desktop.arcgis.com/en/arcmap/latest/tools/conversion-toolbox/point-to-raster.htm
+arcpy.conversion.PointToRaster('Rec_sites',"SOIL_CODE","MAXIMUM_COMBINED_AREA","#",env.cellsize)
+arcpy.conversion.PointToRaster('Schools',"SOIL_CODE","MAXIMUM_COMBINED_AREA","#",env.cellsize)
+arcpy.conversion.PolylineToRaster('Roads',"LENGTH","MAXIMUM_COMBINED_AREA","#",env.cellsize)
+
+# Save these conversions to actual rasters for later use 
 Roads = arcpy.Raster('Roads')
 Rec_sites = arcpy.Raster('Rec_sites')
 schools = arcpy.Raster('schools')
 
 # create the slope raster layer with the "Slope" spatial analyst tool 
 slope = Slope(elevation) 
+
 # reclassify the slopes values following the given table 
 slope = arcpy.Raster('slope')
 reclassListRanges=arcpy.sa.RemapRange([[0,7,10],[7,14,9],[14,21,8],[21,28,7],[28,35,6],[35,42,5],[42,49,4],[49,56,3],[56,63,2],[63,70,1]])
 reclassified_Slope=arcpy.sa.Reclassify(slope,"Value",reclassListRanges,"NODATA")
 reclassified_Slope.save('slope_suitability')
+
 # save the slope suitability into a variable for later use 
 Slope_S = arcpy.Raster('slope_suitavility')
 
@@ -53,6 +58,7 @@ Slope_S = arcpy.Raster('slope_suitavility')
 reclassListValues=arcpy.sa.RemapValue([["Agriculture",10],["Barren Land",6],["Brush/traditional",5],["Builtup",3]["Forest",4],["Water",0],["Wetlands",0]])
 reclassified_Land=arcpy.sa.Reclassify(land,"Land_Use1",reclassListValues,"NODATA")
 reclassified_Land.save("Land_Suitability")
+
 # save the land suitability into a variable for later use 
 Land_S = arcpy.Raster('Land_Suitability')
 
