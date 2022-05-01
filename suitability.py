@@ -1,24 +1,19 @@
-# parameters to look out for :
-# city, recreational sites, schools and  roads are all vector files 
-# land_use1 cellsize = 25*25 & elevation1 cellsize = 30*30 in which we have to convert land_use1 cellsize to 30*30 
-
 # imports
 import arcpy
 import arcpy.da
 from arcpy.sa import *
-from arcpy.conversion import * # necessary when converting features layer (point, polyline or polygone) to a raster layer
+from arcpy.conversion import *
 from arcpy import env
-# from arcpy.management import * : to import project raster (only needed when projecting raster data from a coordinate system to another)
-
+from arcpy.ia import *
+import os
+from statistics import mean
 # initializing the workspace
-arcpy.env.workspace="C:\Users\Mahdi\Desktop\Rasters"
-
+ws = os.path.abspath("os.getcwd()")
+arcpy.env.workspace="ws"
 # reset any python environement overrides to remove specific python settings
 arcpy.ResetEnvironments()
-
 # Check out the ArcGIS Spatial Analyst extension license
 arcpy.CheckOutExtension("Spatial")
-
 # Preview the current Coordinate system used (for our case all vector and raster layers are under the same coordinate system   PCS = NAD_1983_StatePlane_Vermont_FIPS_4400 and projection = Transverse_Mercator
 Coord_sys = env.outputCoordinateSystem.name
 
@@ -31,8 +26,6 @@ arcpy.Managment.Resample('land_use1','land_use2',30,"MAJORITY")
 land = Raster('land_use2')
 
 # Convert vector layers (Rec_sites = points ; Schools = points ; Roads = polyline )  to rasters 
-# PolylineToRaster Documentation : https://pro.arcgis.com/en/pro-app/latest/tool-reference/conversion/polyline-to-raster.htm
-# PointToRaster Documentation : https://desktop.arcgis.com/en/arcmap/latest/tools/conversion-toolbox/point-to-raster.htm
 arcpy.conversion.PointToRaster('Rec_sites',"MAP","MAXIMUM_COMBINED_AREA","#",env.cellsize)
 arcpy.conversion.PointToRaster('Schools',"FID","MAXIMUM_COMBINED_AREA","#",env.cellsize)
 arcpy.conversion.PolylineToRaster('Roads',"LENGTH","MAXIMUM_COMBINED_AREA","#",env.cellsize)
@@ -63,35 +56,52 @@ reclassified_Land.save("Land_Suitability")
 Land_S = arcpy.Raster('Land_Suitability')
 
 # Create a distance map using the euclidian distance tool : 
-# syntax : EucDistance (in_source_data, {maximum_distance}, {cell_size}, {out_direction_raster})
-# source : https://desktop.arcgis.com/en/arcmap/10.3/tools/spatial-analyst-toolbox/euclidean-distance.htm
-
-Roads = "C:\Users\Mahdi\Desktop\Rasters\Roads.shp"
-Roads_output = "C:\Users\Mahdi\Desktop\Rasters\Roads.tiff"
-# https://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/euclidean-distance.htm
-EDRoads = arcpy.sa.EucDistance(Roads, 3100, 30, Roads_output) # as in 3.1 km 
+RoadsPath = os.path.abspath("Roads.shp")
+Roads_Output_Path = os.path.abspath("Roads.tif")
+Roads = "RoadsPath"
+Roads_output = "Roads_Output_Path"
+Rmax = Roads.maximum # Rmax = Roads maximum euclidian distance
+Rmin = Roads.minimum # Rmin = Roads minimum euclidian distance
+Range = mean(Rmax,Rmin) # R would be the avearge of theses min-max distances
+R = Range//10
+EDRoads = arcpy.sa.EucDistance(Roads,Range, 30, Roads_output)  
 EDRoads.save(Roads_output)
-reclassRoadsRange= arcpy.sa.RemapRange([0,300,10],[301,600,9],[601,900,8],[901,1200,7],[1201,1500,6],[1501,1800,5],[1801,2100,4],[2101,2500,3],[2501,2801,2],[2801,3100,1])
-reclassRoads=arcpy.sa.Reclassify(Roads,'Roads.tiff',reclassRoadsRange,"NODATA")
+reclassRoadsRange= arcpy.sa.RemapRange([0,R,10],[R,2*R,9],[2*R,3*R,8],[3*R,4*R,7],[4*R,5*R,6],[5*R,6*R,5],[6*R,7*R,4],[7*R,8*R,3],[8*R,9*R,2],[9*R,Range,1])
+reclassRoads=arcpy.sa.Reclassify(Roads,'Roads.tif',reclassRoadsRange,"NODATA")
 reclassRoads.save("Roads_Suitability")
 Roads_S = arcpy.Raster("Roads_Suitability")
+
 # far away from other schools : 
-schools = "C:\Users\Mahdi\Desktop\Rasters\Schools.shp"
-School_output = "C:\Users\Mahdi\Desktop\Rasters\Schools.tiff"
-EDSchools = arcpy.sa.EucDistance(schools,3100,30,School_output)
+Schools_Path = os.path.abspath("Schools.shp")
+Schools_Output_Path = os.path.abspath("Schools.tif")
+schools = "Schools_Path"
+School_output = "School_Output_Path"
+EDSchools = arcpy.sa.EucDistance(schools,Range,30,School_output)
 EDSchools.save(School_output)
-reclassSchoolRange = arcpy.sa.RemapRange([0,300,1],[301,600,2],[601,900,3],[901,1200,4],[1201,1500,5],[1501,1800,6],[1801,2100,7],[2101,2500,8],[2501,2801,9],[2801,3100,10])
-reclass_Schools = arcpy.sa.Reclassify(schools,'schools.tiff',reclassSchoolRange,"NODATA")
+reclassSchoolRange = arcpy.sa.RemapRange([0,R,1],[R,2*R,2],[2*R,3*R,3],[3*R,4*R,4],[4*R,5*R,5],[5*R,6*R,6],[6*R,7*R,7],[7*R,8*R,8],[8*R,9*R,9],[9*R,Range,10])
+reclass_Schools = arcpy.sa.Reclassify(schools,'schools.tif',reclassSchoolRange,"NODATA")
 reclass_Schools.save("School_Proximity_Suitability")
 School_S = arcpy.Raster('School_Proximity_Suitability')
+
 # recreational sites suitability 
-Rec_sites = "C:\Users\Mahdi\Desktop\Rasters\Rec_sites.shp"
-Rec_output = "C:\Users\Mahdi\Desktop\Rasters\Rec_sites.tiff"
-EDRec = arcpy.sa.EucDistance(Rec_sites, 1000, 30, Rec_output) # as in 1 km Recreational sites need to be real close compared to regular distance to school
+Rec_Path = os.path.abspath("Rec_sites.shp")
+Rec_Output_Path = os.path.abspath("Rec_sites.tif")
+Rec_sites = "Rec_Path"
+Rec_output = "Rec_Output_Path"
+Rec_max = Rec_sites.maximum
+Rec_min = Rec_sites.minimum
+Rec = mean(Rec_min,Rec_max)
+RE = Rec//10
+EDRec = arcpy.sa.EucDistance(Rec_sites, Rec, 30, Rec_output)
 EDRec.save(Rec_output)
-reclassRecRange= arcpy.sa.RemapRange([0,100,10],[101,200,9],[201,300,8],[301,400,7],[401,500,6],[501,600,5],[601,700,4],[701,800,3],[801,900,2],[901,1000,1])
-reclassRec=arcpy.sa.Reclassify(Rec_sites,'Rec.tiff',reclassRecRange,"NODATA")
+reclassRecRange= arcpy.sa.RemapRange([0,RE,10],[RE,2*RE,9],[2*RE,3*RE,8],[3*RE,4*RE,7],[4*RE,5*RE,6],[5*RE,6*RE,5],[6*RE,7*RE,4],[7*RE,8*RE,3],[8*RE,9*RE,2],[9*RE,Rec,1])
+reclassRec=arcpy.sa.Reclassify(Rec_sites,'Rec.tif',reclassRecRange,"NODATA")
 reclassRec.save("Rec_Suitability")
 Rec_S = arcpy.Raster("Rec_Suitability")
 
+# suitability formula : 
 suitability =( 0.125 * Slope_S + 0.125 * School_S + 0.25* Rec_S + 0.5 * Land_S ) 
+
+# Displaying the results : 
+arcpy.CheckOutExtension('ImageAnalyst')
+arcpy.ia.Render(suitability, rendering_rule = {'min' : 0 ,'max' : 100 },colormap = 'Red to Green')
